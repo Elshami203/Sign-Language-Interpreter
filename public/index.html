@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Translation Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Translation Test</h1>
+    <div>
+        <h2>Audio to Text</h2>
+        <input type="file" id="audioFile" accept="audio/*">
+        <button onclick="translateAudio()">Translate Audio</button>
+    </div>
+    <div>
+        <h2>Gesture to Text</h2>
+        <input type="file" id="gestureImage" accept="image/*">
+        <button onclick="translateGesture()">Translate Gesture</button>
+    </div>
+    <div id="result"></div>
+
+    <script>
+        const socket = io('http://localhost:3001');
+        const resultDiv = document.getElementById('result');
+
+        function translateAudio() {
+            const audioFile = document.getElementById('audioFile').files[0];
+            socket.emit('translate-audio', { audio: audioFile });
+        }
+
+        function translateGesture() {
+            const gestureFile = document.getElementById('gestureImage').files[0];
+            socket.emit('translate-gesture', { image: gestureFile });
+        }
+
+        socket.on('audio-translation', (response) => {
+            resultDiv.innerHTML = `Audio Translation: ${response.success ? response.text : response.error}`;
+        });
+
+        socket.on('gesture-translation', (response) => {
+            resultDiv.innerHTML = `Gesture Translation: ${response.success ? response.text : response.error}`;
+        });
+    </script>
+</body>
+</html>
