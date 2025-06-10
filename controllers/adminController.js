@@ -1,30 +1,22 @@
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import fakeDB from "../models/userFakeDB.js";
+import fakeDB from "../models/adminFakeDB.js"; // Separate fake DB for admins
 import { v4 as uuidv4 } from "uuid";
 
-const generateAdminToken = (id) => {
-  return jwt.sign({ id, role: "admin" }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
+const generateAdminToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
 export const adminRegister = asyncHandler(async (req, res) => {
-  const { name, email, password, adminCode } = req.body;
+  const { name, email, password } = req.body;
 
-  if (!name || !email || !password || !adminCode) {
+  if (!name || !email || !password) {
     res.status(400);
     throw new Error("Please provide all fields");
   }
 
-  // Verify admin registration code
-  if (adminCode !== process.env.ADMIN_CODE) {
-    res.status(401);
-    throw new Error("Invalid admin registration code");
-  }
-
-  const adminExists = fakeDB.find((user) => user.email === email);
+  const adminExists = fakeDB.find((admin) => admin.email === email);
   if (adminExists) {
     res.status(400);
     throw new Error("Admin already exists");
@@ -41,7 +33,7 @@ export const adminRegister = asyncHandler(async (req, res) => {
 
   fakeDB.push(newAdmin);
 
-  const token = generateAdminToken(newAdmin.id);
+  const token = generateAdminToken(newAdmin.id, newAdmin.role);
 
   res.status(201).json({
     message: "Admin registered successfully",
@@ -49,7 +41,6 @@ export const adminRegister = asyncHandler(async (req, res) => {
       id: newAdmin.id,
       name: newAdmin.name,
       email: newAdmin.email,
-      role: newAdmin.role,
       token,
     },
   });
@@ -78,7 +69,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
     throw new Error("Invalid admin credentials");
   }
 
-  const token = generateAdminToken(admin.id);
+  const token = generateAdminToken(admin.id, admin.role);
 
   res.status(200).json({
     message: "Admin login successful",
