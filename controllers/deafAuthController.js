@@ -1,8 +1,10 @@
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import fakeDB from "../models/deafUserFakeDB.js"; // Separate fake DB for deaf users
-import { v4 as uuidv4 } from "uuid";
+import {
+  createDeafUser,
+  getDeafUserByEmail,
+} from "../models/deafUserModel.js"; // Import the deafUserModel
 
 export const registerDeafUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -12,25 +14,29 @@ export const registerDeafUser = asyncHandler(async (req, res) => {
     throw new Error("Please provide all fields");
   }
 
-  const userExists = fakeDB.find((user) => user.email === email);
+  // Check if the user already exists
+  const userExists = await getDeafUserByEmail(email);
   if (userExists) {
     res.status(400);
     throw new Error("User already exists");
   }
 
+  // Hash the password
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create a new user
   const newUser = {
-    id: uuidv4(),
     name,
     email,
     password: hashedPassword,
     role: "deaf",
   };
 
-  fakeDB.push(newUser);
+  const result = await createDeafUser(newUser);
 
+  // Generate a token
   const token = jwt.sign(
-    { id: newUser.id, role: newUser.role },
+    { id: result.insertedId, role: newUser.role },
     process.env.JWT_SECRET,
     { expiresIn: "1h" }
   );
@@ -38,7 +44,7 @@ export const registerDeafUser = asyncHandler(async (req, res) => {
   res.status(201).json({
     message: "Deaf user registered successfully",
     data: {
-      id: newUser.id,
+      id: result.insertedId,
       name: newUser.name,
       email: newUser.email,
       token,
@@ -54,20 +60,23 @@ export const loginDeafUser = asyncHandler(async (req, res) => {
     throw new Error("Please provide email and password");
   }
 
-  const user = fakeDB.find((user) => user.email === email);
+  // Find the user by email
+  const user = await getDeafUserByEmail(email);
   if (!user) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
 
+  // Check if the password matches
   const isPasswordMatch = await bcrypt.compare(password, user.password);
   if (!isPasswordMatch) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
 
+  // Generate a token
   const token = jwt.sign(
-    { id: user.id, role: user.role },
+    { id: user._id, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "1h" }
   );
@@ -75,7 +84,7 @@ export const loginDeafUser = asyncHandler(async (req, res) => {
   res.status(200).json({
     message: "Login successful",
     data: {
-      id: user.id,
+      id: user._id,
       name: user.name,
       email: user.email,
       token,

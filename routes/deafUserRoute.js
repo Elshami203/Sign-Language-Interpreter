@@ -1,18 +1,18 @@
 import express from "express";
 import {
-  createDeafUser,
-  getAllDeafUsers,
-  getDeafUserById,
-  updateDeafUser,
-  deleteDeafUser,
+  createDeafUserController,
+  getAllDeafUsersController,
+  getDeafUserByIdController,
+  updateDeafUserController,
+  deleteDeafUserController,
 } from "../controllers/deafUserController.js";
 
 const router = express.Router();
 
-router.post("/", createDeafUser);
-router.get("/", getAllDeafUsers);
-router.get("/:id", getDeafUserById);
-router.put("/:id", updateDeafUser);
-router.delete("/:id", deleteDeafUser);
+router.post("/", createDeafUserController);
+router.get("/", getAllDeafUsersController);
+router.get("/:id", getDeafUserByIdController);
+router.put("/:id", updateDeafUserController);
+router.delete("/:id", deleteDeafUserController);
 
 export default router;

@@ -1,7 +1,7 @@
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import fakeDB from "../models/adminFakeDB.js"; // Separate fake DB for admins
+import adminDB from "../models/admin.js"; // Import the new admin.js database
 import { v4 as uuidv4 } from "uuid";
 
 const generateAdminToken = (id, role) => {
@@ -16,13 +16,17 @@ export const adminRegister = asyncHandler(async (req, res) => {
     throw new Error("Please provide all fields");
   }
 
-  const adminExists = fakeDB.find((admin) => admin.email === email);
+  // Check if admin already exists
+  const adminExists = await adminDB.find((admin) => admin.email === email);
   if (adminExists) {
     res.status(400);
     throw new Error("Admin already exists");
   }
 
+  // Hash the password
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Create a new admin
   const newAdmin = {
     id: uuidv4(),
     name,
@@ -31,8 +35,9 @@ export const adminRegister = asyncHandler(async (req, res) => {
     role: "admin",
   };
 
-  fakeDB.push(newAdmin);
+  await adminDB.create(newAdmin); // Save the new admin to the database
 
+  // Generate a token
   const token = generateAdminToken(newAdmin.id, newAdmin.role);
 
   res.status(201).json({
@@ -54,21 +59,22 @@ export const adminLogin = asyncHandler(async (req, res) => {
     throw new Error("Please provide email and password");
   }
 
-  const admin = fakeDB.find(
-    (user) => user.email === email && user.role === "admin"
-  );
+  // Find the admin by email
+  const admin = await adminDB.find((user) => user.email === email && user.role === "admin");
 
   if (!admin) {
     res.status(401);
     throw new Error("Invalid admin credentials");
   }
 
+  // Check if the password matches
   const isPasswordMatch = await bcrypt.compare(password, admin.password);
   if (!isPasswordMatch) {
     res.status(401);
     throw new Error("Invalid admin credentials");
   }
 
+  // Generate a token
   const token = generateAdminToken(admin.id, admin.role);
 
   res.status(200).json({

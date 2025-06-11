@@ -1,23 +1,21 @@
 import express from "express";
 import dotenv from "dotenv";
+import { connectDB, client } from "./models/connection.js";
 dotenv.config();
 import cors from "cors";
 import morgan from "morgan";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import authRoutes from "./routes/authRoute.js";
 import adminRoutes from "./routes/adminRoute.js";
 import videoCallRoutes from "./routes/videoCallRoute.js";
-import speechToTextRoutes from "./routes/revAiRoute.js";
 import deafUserRoutes from "./routes/deafUserRoute.js";
 import normalUserRoutes from "./routes/normalUserRoute.js";
-import revAiService from "./service/revAiService.js";
-import ocrRoutes from "./routes/ocrRoute.js";
 import deafAuthRoutes from "./routes/deafAuthRoute.js";
 import normalAuthRoutes from "./routes/normalAuthRoute.js";
 import TranslationController from "./controllers/translationController.js";
 import multer from "multer";
 import { sendImageToFastAPI } from "./utils/fastapiClient.js";
+import modelRoutes from "./routes/modelRoute.js";
 
 import { Socket } from "dgram";
 // import mongoose from 'mongoose';
@@ -64,11 +62,11 @@ io.on("connection", (socket) => {
 app.use("/api", authRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", videoCallRoutes);
-app.use("/api", speechToTextRoutes);
 app.use("/api/deaf-users", deafUserRoutes);
 app.use("/api/normal-users", normalUserRoutes);
 app.use("/api/deaf-auth", deafAuthRoutes);
 app.use("/api/normal-auth", normalAuthRoutes);
+app.use("/api", modelRoutes);
 
 app.post("/api/detect", upload.single("image"), async (req, res) => {
   try {
@@ -87,6 +85,19 @@ app.post("/api/detect", upload.single("image"), async (req, res) => {
   }
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+(async () => {
+  try {
+    console.log("Connecting to the database...");
+    await connectDB();
+    console.log("Database connected successfully");
+  } catch (error) {
+    console.error("Failed to connect to the database:", error);
+    process.exit(1);
+  }
+})();
+
+process.on("SIGINT", async () => {
+  await client.close();
+  console.log("MongoDB connection closed"); // close the MongoDB connection
+  process.exit(0);
 });

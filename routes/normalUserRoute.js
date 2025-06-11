@@ -1,18 +1,18 @@
 import express from "express";
 import {
-  createNormalUser,
-  getAllNormalUsers,
-  getNormalUserById,
-  updateNormalUser,
-  deleteNormalUser,
+  createNormalUserController,
+  getAllNormalUsersController,
+  getNormalUserByIdController,
+  updateNormalUserController,
+  deleteNormalUserController,
 } from "../controllers/normalUserController.js";
 
 const router = express.Router();
 
-router.post("/", createNormalUser);
-router.get("/", getAllNormalUsers);
-router.get("/:id", getNormalUserById);
-router.put("/:id", updateNormalUser);
-router.delete("/:id", deleteNormalUser);
+router.post("/", createNormalUserController);
+router.get("/", getAllNormalUsersController);
+router.get("/:id", getNormalUserByIdController);
+router.put("/:id", updateNormalUserController);
+router.delete("/:id", deleteNormalUserController);
 
 export default router;
